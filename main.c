@@ -1,22 +1,25 @@
 /* Written by Jamy Spencer 06 Feb 2017 */
 #include <stdio.h>
-#include "log.h"
+#include  <sys/types.h>
 #include <unistd.h>
+#include "forkerlib.h"
 
 int main ( int argc, char *argv[] ){
 
-	char* log_file_name = "logfile.txt";
-	int c;
+	char* log_file_name = "test.out";
+	int c, x;
 	int num_slave_processes = 5;
 	int num_increments = 3;
 	int secs_until_terminate = 20;
 
 	//check that there is the correct number of command line arguments
 
-	while ( (c = getopt(argc, argv, "hil:s:t")) != -1) {
+	while ( (c = getopt(argc, argv, "hi:l:s:t")) != -1) {
 		switch(c){
 		case 'h':
-			printf("%s\n", "-h\tHelp Menu\n-n\tSet special number\n-l\tSet log file name");
+			printf("-h\tHelp Menu\n-i\tChanges the number of increments each slave process does(default is 3)\n");
+			printf("-l\tSet log file name(default is test.out)\n-s\tChanges the number of slave processes(default is 5)\n");
+			printf("-t\tChanges the number of seconds to wait until the master terminates all slaves and itself(default is 20)\n");
 			return 0;
 			break;
 		case 'i':
@@ -37,6 +40,9 @@ int main ( int argc, char *argv[] ){
 		}
 	}
 
+	if (MakeSlaves(num_slave_processes) == 1){
+		return 1;
+	}
 
 	return 0;
 }

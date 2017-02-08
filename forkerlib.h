@@ -2,14 +2,9 @@
 #ifndef FORKERLIB_H
 #define FORKERLIB_H
 
-#include <time.h>
+#include "slaveobj.h"
 
-
-data_t CreateLogMsg(char* msg, char* prg_name, char* spec_num);
-int addmsg(data_t data);
-void clearlog(void);
-char* getlog(void);
-int SaveLog(char* log_file_name);
-int MakeSlaves(int num_slaves);
+SLV_LIST* MakeSlaves(int num_slaves, SLV_LIST* hd_ptr);
+void KillSlaves(SLV_LIST* hd_ptr);
 
 #endif

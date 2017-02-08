@@ -3,6 +3,7 @@
 #include  <sys/types.h>
 #include <unistd.h>
 #include "forkerlib.h"
+#include "slaveobj.h"
 
 int main ( int argc, char *argv[] ){
 
@@ -11,6 +12,10 @@ int main ( int argc, char *argv[] ){
 	int num_slave_processes = 5;
 	int num_increments = 3;
 	int secs_until_terminate = 20;
+
+
+
+	SLV_LIST* hd_ptr = malloc(sizeof(SLV_LIST));
 
 	//check that there is the correct number of command line arguments
 
@@ -39,10 +44,10 @@ int main ( int argc, char *argv[] ){
 			break;
 		}
 	}
+	MakeSlaves(num_slave_processes, hd_ptr);
 
-	if (MakeSlaves(num_slave_processes) == 1){
-		return 1;
-	}
+	
+	KillSlaves(hd_ptr);
 
 	return 0;
 }

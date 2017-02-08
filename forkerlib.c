@@ -1,117 +1,67 @@
 /* Written by Jamy Spencer 30 Jan 2017 */
 
 #include <errno.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include "forkerlib.h"
+#include "slaveobj.h"
 
-typedef struct list_struct {
-	data_t item;
-	struct list_struct *next;
-} log_t;
 
-static log_t* headptr = NULL;
-static log_t* tailptr = NULL;
+SLV_LIST* MakeSlaves(int num_slaves, SLV_LIST* hd_ptr){
 
-int MakeSlaves(int num_slaves){
+	pid_t pid;
+	int i;
+	SLV_LIST* temp;
 
-	for (x = 0; x < num_slaves; x++){
-		c = fork();
-		if (c < 0){
+	for (i = 0; i < num_slaves; i++){
+		pid = fork();
+		if (pid < 0){
 			errno = ECHILD;
-			perror("Error: fork failed");
+			perror("Fork failed");
+			KillSlaves(hd_ptr);
 			return 1;
 		}
-		else if (c > 0){
+		else if (pid > 0){
+//			perror("A slave has been born");
+			if (hd_ptr->item.process_id == 0){
+				hd_ptr->item.process_id = pid;
+//				printf("PID of HEAD is: %d\n", hd_ptr->item.process_id);
+//				printf("Address of HEAD is: %d\n", hd_ptr);
+			}
+			else{
+				temp = hd_ptr;
+				while (temp->next != NULL){
+					temp = temp->next;
+				}
+				temp->next = malloc (sizeof(SLV_LIST));
+				temp = temp->next;
+				temp->item.process_id = pid;
 
+			}
+		}
+		else if (pid == 0){
+			execl("./", "./slave");	
+//			sleep(1000);
 		}
 	}
-	return 0;
+//	printf("PID of HEAD is: %d\n", hd_ptr->item.process_id);
+	return hd_ptr;
 }
 
-data_t CreateLogMsg(char* msg, char* process_id, char* spec_num){
+void KillSlaves(SLV_LIST* hd_ptr){
+	SLV_LIST* temp;
 
-	data_t temp;
-	char buffer[200];
-
-	clock_gettime(CLOCK_REALTIME, &(temp.time));
-	sprintf(buffer, "File modified by process number %d at time %lu%09lu with sharedNum %s\n", process_id, temp.time.tv_sec, temp.time.tv_nsec, spec_num);
-	temp.err_msg = (char*) malloc (strlen(buffer) + 1);
-	sprintf(temp.err_msg, "%s", buffer);
-//	printf("%s\n", temp.err_msg);
-	return temp;
-}
-
-int addmsg(data_t data) { /* allocate node for data and add to end of list */
-	log_t *newnode;
-	int nodesize;
-	nodesize = sizeof(log_t) + strlen(data.err_msg) + 1;
-
-	if ((newnode = (log_t *)(malloc(nodesize))) == NULL){ /* couldn't add node */
-		return -1;
-	}
-	newnode->item.time = data.time;
-	newnode->item.err_msg = (char *)newnode + sizeof(log_t);
-	strcpy(newnode->item.err_msg, data.err_msg);
-	free(data.err_msg);
-	newnode->next = NULL;
-	
-	if (headptr == NULL){
-		headptr = newnode;
-	}
-	else{
-		tailptr->next = newnode;
-	}
-
-	tailptr = newnode;
-//	printf("Error message stored in linked list: %s\n", tailptr->item.err_msg);
-	return 0;
-}
-
-void clearlog(void) {
-	log_t* temp;
-	while(headptr != NULL){
-		temp = headptr;
-		headptr = headptr->next;
+	while (hd_ptr != NULL){
+//		printf("PID of HEAD is: %d\n", hd_ptr->item.process_id);
+		temp = hd_ptr;		
+		hd_ptr = hd_ptr->next;
+//		printf("The process id is: %d\n", temp->item.process_id);
+		kill(temp->item.process_id, SIGKILL);
 		free(temp);	
-//		printf("%d", temp == NULL);
 	}
+	perror("Master killed the slaves.");
 }
 
-char* getlog(void) {//REMEMBER, the returned char* has been malloc'ed here, FREE IT!
-	char* str;
-	int size;
-
-	log_t* trav;
-	size = (strlen(headptr->item.err_msg) + 1);
-	str = (char*) malloc (size);
-	strcpy(str, headptr->item.err_msg);
-	trav = headptr->next;
-
-	while (trav != NULL){
-		size += (strlen(trav->item.err_msg));
-//		printf("size of string: %d\n", size); 
-		str = (char*) realloc(str, size);
-		sprintf(str + strlen(str), "%s", trav->item.err_msg);
-		trav = trav->next;
-//		printf("%s\n", str);
-	}
-	return str;
-}
-
-int SaveLog(char* log_file_name) {
-	FILE* file_write = fopen(log_file_name, "a");
-
-	if (headptr == NULL){
-		errno = ENODATA;
-		return -1;
-	}
-	char* str_out = getlog();
-	fprintf(file_write, "%s", str_out);
-	free(str_out);//
-	
-	fclose(file_write);
-	return 0;
-}

@@ -14,7 +14,7 @@ SLV_LIST* MakeSlaves(int num_slaves, SLV_LIST* hd_ptr){
 
 	pid_t pid;
 	int i;
-	SLV_LIST* temp;
+
 
 	for (i = 0; i < num_slaves; i++){
 		pid = fork();
@@ -32,18 +32,11 @@ SLV_LIST* MakeSlaves(int num_slaves, SLV_LIST* hd_ptr){
 //				printf("Address of HEAD is: %d\n", hd_ptr);
 			}
 			else{
-				temp = hd_ptr;
-				while (temp->next != NULL){
-					temp = temp->next;
-				}
-				temp->next = malloc (sizeof(SLV_LIST));
-				temp = temp->next;
-				temp->item.process_id = pid;
-
+				addNode(hd_ptr, pid);
 			}
 		}
 		else if (pid == 0){
-			execl("./", "./slave");	
+			execl("./slave", (char*)0);	
 //			sleep(1000);
 		}
 	}
@@ -52,15 +45,9 @@ SLV_LIST* MakeSlaves(int num_slaves, SLV_LIST* hd_ptr){
 }
 
 void KillSlaves(SLV_LIST* hd_ptr){
-	SLV_LIST* temp;
-
-	while (hd_ptr != NULL){
-//		printf("PID of HEAD is: %d\n", hd_ptr->item.process_id);
-		temp = hd_ptr;		
-		hd_ptr = hd_ptr->next;
-//		printf("The process id is: %d\n", temp->item.process_id);
-		kill(temp->item.process_id, SIGKILL);
-		free(temp);	
+	while (hd_ptr != NULL){	
+		kill((hd_ptr)->item.process_id, SIGKILL);
+		hd_ptr = destroyHead(hd_ptr);	
 	}
 	perror("Master killed the slaves.");
 }

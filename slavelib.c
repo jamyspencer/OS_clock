@@ -1,14 +1,15 @@
 #include <time.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include  <sys/types.h>
 #include "slavelib.h"
 
-void CriticalSection(void){
+void CriticalSection(char* save_file){
 	srand(time(NULL));
 
 	sleep(rand() % 3);
-	SaveLog();
+	SaveLog(save_file);
 	sleep(rand() % 3);
 
 }
@@ -34,7 +35,7 @@ char* MakeMsg(int shared_num){
 	struct timespec time;
 
 	clock_gettime(CLOCK_REALTIME, &(time));
-	sprintf(buffer, "File modified by process number %d at time %lu%09lu with sharedNum %s\n", getpid(), time.tv_sec, time.tv_nsec, shared_num);
+	sprintf(buffer, "File modified by process number %d at time %lu%09lu with sharedNum %d\n", getpid(), time.tv_sec, time.tv_nsec, shared_num);
 	msg = (char*) malloc (strlen(buffer) + 1);
 	sprintf(msg, "%s", buffer);
 

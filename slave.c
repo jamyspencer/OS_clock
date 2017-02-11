@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include  <sys/types.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include "slavelib.h"
 #include "slaveobj.h"
 
@@ -10,7 +11,7 @@ int main ( int argc, char *argv[] ){
 	
 	this_info.process_id = getpid();
 	printf("booyah, in the child\n");
-//	CriticalSection();
+//	CriticalSection(argv[1]);
 
 	return 0;
 }

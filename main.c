@@ -1,6 +1,7 @@
 /* Written by Jamy Spencer 06 Feb 2017 */
 #include <stdio.h>
-#include  <sys/types.h>
+#include <stdlib.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include "forkerlib.h"
 #include "slaveobj.h"
@@ -45,9 +46,12 @@ int main ( int argc, char *argv[] ){
 		}
 	}
 	MakeSlaves(num_slave_processes, hd_ptr);
-
+	for (c = 0; c < num_slave_processes; c++){
+		 wait();
+	}		
 	
-	KillSlaves(hd_ptr);
+	
+//	KillSlaves(hd_ptr);
 
 	return 0;
 }

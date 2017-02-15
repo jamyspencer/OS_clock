@@ -4,7 +4,8 @@
 
 #include "slaveobj.h"
 
-SLV_LIST* MakeSlaves(int num_slaves, SLV_LIST* hd_ptr);
+SLV_LIST* MakeSlave(SLV_LIST* hd_ptr);
 void KillSlaves(SLV_LIST* hd_ptr);
+
 
 #endif

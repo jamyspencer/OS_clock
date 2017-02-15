@@ -1,3 +1,4 @@
+#include <signal.h>
 #include <stdlib.h>
 #include "slaveobj.h"
 
@@ -21,12 +22,13 @@ struct list* destroyNode(struct list *head_ptr, pid_t pid){
 	struct list *temp = head_ptr;
 	while(temp->next != NULL){
 		if (temp->item.process_id == pid){
+			kill((temp)->item.process_id, SIGKILL);
 			if (temp == head_ptr){
 				return destroyHead(head_ptr);
 			}
 			else if (temp->next == NULL){
-				(temp->prev)->next = NULL;
 				free(temp);
+				(temp->prev)->next = NULL;
 				return head_ptr;
 			}
 			else{
@@ -37,14 +39,20 @@ struct list* destroyNode(struct list *head_ptr, pid_t pid){
 			}
 		}
 	}
+	return NULL;
 }
 
 struct list* destroyHead(struct list *head_ptr){
 	struct list *temp = head_ptr;	
-	head_ptr = head_ptr->next;
-	if (head_ptr != NULL){
+	
+	if (temp != NULL){
+		head_ptr = head_ptr->next;
+		kill((temp)->item.process_id, SIGKILL);
+		printf("%d killed\n", (temp)->item.process_id);
 		free(temp);
-		head_ptr->prev = NULL;
+		if (head_ptr != NULL){
+			head_ptr->prev = NULL;
+		}
 	}
 	return head_ptr;
 }

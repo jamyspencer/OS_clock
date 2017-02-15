@@ -9,10 +9,9 @@ int main ( int argc, char *argv[] ){
 
 	SLV_INFO this_info;
 	
-	sleep(10);
 	this_info.process_id = getpid();
 	printf("booyah, in the child %d\n", this_info.process_id);
-//	CriticalSection(argv[1]);
+	CriticalSection(argv[1]);
 
 	return 0;
 }

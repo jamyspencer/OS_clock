@@ -5,6 +5,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h> 
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include "forkerlib.h"
 #include "slaveobj.h"
@@ -12,11 +13,11 @@
 void AbortProc();
 
 static SLV_LIST* hd_ptr;
-static int* shm_addr;
+static int* shared_total;
+static int mem_id;
 
 int main ( int argc, char *argv[] ){
 
-	const key_t KEY = 9876;
 	const int MAX_SLAVES = 15;
 
 	char* log_file_name = "test.out";
@@ -25,6 +26,7 @@ int main ( int argc, char *argv[] ){
 	int num_increments = 3;
 	int secs_until_terminate = 20;
 	int slave_count = 0;
+	pid_t returning_child;
 
 	signal(2, AbortProc);	
 
@@ -59,7 +61,8 @@ int main ( int argc, char *argv[] ){
 		}
 	}
 	for (i = 0; i < num_slave_processes; i++){
-		if (MakeSlave(hd_ptr) == NULL){
+		hd_ptr = MakeSlave(hd_ptr);
+		if (hd_ptr == NULL){
 			perror("Error: MakeSlave() returned NULL");
 			exit(1);
 		}
@@ -68,24 +71,27 @@ int main ( int argc, char *argv[] ){
 		}
 	}
 
-	shm_addr = AllocateSharedMemory(KEY);
+	mem_id = AllocateSharedMemory(shared_total);
 
-sleep (10);	
-/*
-	for (i = 0; i < num_slave_processes; i++){
-		 wait();
-	}		
-*/
-	
-	KillSlaves(hd_ptr);
 
+	while(slave_count > 0){
+		returning_child = wait(NULL);
+	printf("%d\n", returning_child);
+		if (returning_child != -1){
+			hd_ptr = destroyNode(hd_ptr, returning_child);
+		}
+		slave_count--;
+	}
+
+	shmdt(shared_total);
+	shmctl(mem_id, IPC_RMID, NULL);
 	return 0;
 }
 
 void AbortProc(){
 	signal(2, AbortProc);
 	KillSlaves(hd_ptr);
-	printf("In the abort function\n");
-	shmdt(shm_addr);
+	shmdt(shared_total);
+	shmctl(mem_id, IPC_RMID, NULL);
 	exit(1);
 }

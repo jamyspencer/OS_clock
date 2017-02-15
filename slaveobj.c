@@ -15,6 +15,7 @@ void addNode(struct list *head_ptr, pid_t pid){
 	tail->next = malloc (sizeof(struct list));
 	(tail->next)->prev = tail;
 	(tail->next)->item.process_id = pid;
+	(tail->next)->next = NULL;
 }
 
 //returns the head_ptr address of the list that now has the node containing the pid passed removed
@@ -22,7 +23,6 @@ struct list* destroyNode(struct list *head_ptr, pid_t pid){
 	struct list *temp = head_ptr;
 	while(temp->next != NULL){
 		if (temp->item.process_id == pid){
-			kill((temp)->item.process_id, SIGKILL);
 			if (temp == head_ptr){
 				return destroyHead(head_ptr);
 			}
@@ -38,6 +38,9 @@ struct list* destroyNode(struct list *head_ptr, pid_t pid){
 				return head_ptr;
 			}
 		}
+		else{
+			temp = temp->next;
+		}
 	}
 	return NULL;
 }
@@ -47,9 +50,8 @@ struct list* destroyHead(struct list *head_ptr){
 	
 	if (temp != NULL){
 		head_ptr = head_ptr->next;
-		kill((temp)->item.process_id, SIGKILL);
-		printf("%d killed\n", (temp)->item.process_id);
 		free(temp);
+		temp = NULL;
 		if (head_ptr != NULL){
 			head_ptr->prev = NULL;
 		}

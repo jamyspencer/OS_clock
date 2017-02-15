@@ -6,6 +6,6 @@
 
 SLV_LIST* MakeSlave(SLV_LIST* hd_ptr);
 void KillSlaves(SLV_LIST* hd_ptr);
-
+int AllocateSharedMemory(int*);
 
 #endif

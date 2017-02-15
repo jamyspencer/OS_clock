@@ -11,7 +11,7 @@
 #include "slaveobj.h"
 
 
-SLV_LIST* MakeSlave(SLV_LIST* hd_ptr){
+SLV_LIST* MakeSlave(SLV_LIST* head_ptr){
 
 	pid_t pid;
 	int i;
@@ -20,49 +20,47 @@ SLV_LIST* MakeSlave(SLV_LIST* hd_ptr){
 	if (pid < 0){
 		errno = ECHILD;
 		perror("Fork failed");
-		KillSlaves(hd_ptr);
+		KillSlaves(head_ptr);
 		return 1;
 	}
 	else if (pid > 0){
 //				perror("A slave has been born");
-		if (hd_ptr->item.process_id == 0){
-			hd_ptr->item.process_id = pid;
-//				printf("PID of HEAD is: %d\n", hd_ptr->item.process_id);
-//				printf("Address of HEAD is: %d\n", hd_ptr);
+		if (head_ptr->item.process_id == 0){
+			head_ptr->item.process_id = pid;
+//				printf("PID of HEAD is: %d\n", head_ptr->item.process_id);
+//				printf("Address of HEAD is: %d\n", head_ptr);
 		}
 		else{
-			addNode(hd_ptr, pid);
+			addNode(head_ptr, pid);
 		}
 	}
 	else if (pid == 0){
 		execl("./slave", (char*)0);	
 //			sleep(1000);
 	}
-//	printf("PID of HEAD is: %d\n", hd_ptr->item.process_id);
-	return hd_ptr;
+//	printf("PID of HEAD is: %d\n", head_ptr->item.process_id);
+	return head_ptr;
 }
 
-void KillSlaves(SLV_LIST* hd_ptr){
-	while (hd_ptr != NULL){	
-		hd_ptr = destroyHead(hd_ptr);	
+void KillSlaves(SLV_LIST* head_ptr){
+	while (head_ptr != NULL){	
+		kill(head_ptr->item.process_id, SIGKILL);
+		head_ptr = destroyHead(head_ptr);	
 	}
-	perror("Master killed the slaves.");
+	//perror("Master killed the slaves.");
 }
 
-int AllocateSharedMemory(key_t key){
-	int* shm_addr;
-	int shm_id;
+int AllocateSharedMemory(int* shared_total){
+	int mem_id;
 
-	shm_id = shmget(key, sizeof(int), IPC_CREAT | 0666);
-	if (shm_id== -1){
+	mem_id = shmget(IPC_PRIVATE, sizeof(int), IPC_CREAT | 0666);
+	if (mem_id == -1){
 		perror("Error: shmget");
 	}
 
-	shm_addr = shmat(key, NULL, 0);
-	if ((int) shm_addr == -1){
-		return -1;
-	}
-	return shm_addr;
+	shared_total = (int*) shmat(mem_id, NULL, 0);
+
+	return mem_id;
 }
 
 

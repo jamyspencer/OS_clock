@@ -9,7 +9,7 @@ void CriticalSection(char* save_file){
 	srand(time(NULL));
 
 	sleep(rand() % 3);
-	SaveLog(save_file);
+//	SaveLog(save_file);
 	sleep(rand() % 3);
 
 }

@@ -4,8 +4,8 @@ DEBUG_ARGS=-g -Wall
 MAIN=master
 SECONDARY=slave
 OBJS1=main.o forkerlib.o slaveobj.o
-OBJS2=slave.o slavelib.o
-DEPS=forkerlib.h slavelib.h slaveobj.h
+OBJS2=slave.o 
+DEPS=forkerlib.h  slaveobj.h
 
 all: $(MAIN) $(SECONDARY)
 

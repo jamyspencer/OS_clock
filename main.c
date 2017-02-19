@@ -13,20 +13,24 @@
 void AbortProc();
 
 static SLV_LIST* hd_ptr;
-static int* shared_total;
-static int mem_id;
+static int* shrd_data;
+static int shmid;
 
 int main ( int argc, char *argv[] ){
 
 	const int MAX_SLAVES = 15;
+	const int SHM_SIZE = sizeof(int);
 
 	char* log_file_name = "test.out";
 	int c, i;
-	int num_slave_processes = 5;
+	int num_slave_processes = 4;
 	int num_increments = 3;
 	int secs_until_terminate = 20;
 	int slave_count = 0;
+
+
 	pid_t returning_child;
+	key_t key = 81380;
 
 	signal(2, AbortProc);	
 
@@ -39,7 +43,7 @@ int main ( int argc, char *argv[] ){
 		switch(c){
 		case 'h':
 			printf("-h\tHelp Menu\n-i\tChanges the number of increments each slave process does(default is 3)\n");
-			printf("-l\tSet log file name(default is test.out)\n-s\tChanges the number of slave processes(default is 5)\n");
+			printf("-l\tSet log file name(default is test.out)\n-s\tChanges the number of slave processes(default is 4)\n");
 			printf("-t\tChanges the number of seconds to wait until the master terminates all slaves and itself(default is 20)\n");
 			return 0;
 			break;
@@ -60,8 +64,30 @@ int main ( int argc, char *argv[] ){
 			break;
 		}
 	}
+perror("\n");
+
+    /* connect to (and possibly create) the segment: */
+    if ((shmid = shmget(IPC_PRIVATE, SHM_SIZE, 0666 | IPC_CREAT)) == -1) {
+        perror("shmget");
+        exit(1);
+    }
+
+    /* attach to the segment to get a pointer to it: */
+    shrd_data = shmat(shmid, NULL, 0);
+    if (shrd_data == (int *)(-1)) {
+        perror("shmat");
+        exit(1);
+    }
+
+    /* read or modify the segment*/
+    *shrd_data = (int)0;
+
+	
+printf("Main value of shared: %d", *shrd_data);
+
+printf("%d\n", shrd_data);
 	for (i = 0; i < num_slave_processes; i++){
-		hd_ptr = MakeSlave(hd_ptr);
+		hd_ptr = MakeSlave(hd_ptr, shmid);
 		if (hd_ptr == NULL){
 			perror("Error: MakeSlave() returned NULL");
 			exit(1);
@@ -71,27 +97,25 @@ int main ( int argc, char *argv[] ){
 		}
 	}
 
-	mem_id = AllocateSharedMemory(shared_total);
-
 
 	while(slave_count > 0){
 		returning_child = wait(NULL);
-	printf("%d\n", returning_child);
 		if (returning_child != -1){
 			hd_ptr = destroyNode(hd_ptr, returning_child);
+			printf("Child %d returned/removed\n", returning_child);
 		}
 		slave_count--;
 	}
-
-	shmdt(shared_total);
-	shmctl(mem_id, IPC_RMID, NULL);
+//	printf("The total is %d", shrd_data);
+	shmdt(shrd_data);
+	shmctl(shmid, IPC_RMID, NULL);
 	return 0;
 }
 
 void AbortProc(){
 	signal(2, AbortProc);
 	KillSlaves(hd_ptr);
-	shmdt(shared_total);
-	shmctl(mem_id, IPC_RMID, NULL);
+	shmdt(shrd_data);
+	shmctl(shmid, IPC_RMID, NULL);
 	exit(1);
 }

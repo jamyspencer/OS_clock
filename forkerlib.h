@@ -4,7 +4,7 @@
 
 #include "slaveobj.h"
 
-SLV_LIST* MakeSlave(SLV_LIST* hd_ptr);
+SLV_LIST* MakeSlave(SLV_LIST* hd_ptr, int);
 void KillSlaves(SLV_LIST* hd_ptr);
 int AllocateSharedMemory(int*);
 

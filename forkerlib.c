@@ -11,7 +11,7 @@
 #include "slaveobj.h"
 
 
-SLV_LIST* MakeSlave(SLV_LIST* head_ptr){
+SLV_LIST* MakeSlave(SLV_LIST* head_ptr, int id){
 
 	pid_t pid;
 	int i;
@@ -35,8 +35,7 @@ SLV_LIST* MakeSlave(SLV_LIST* head_ptr){
 		}
 	}
 	else if (pid == 0){
-		execl("./slave", (char*)0);	
-//			sleep(1000);
+		execl("./slave", "./slave", sprintf("%d", id),NULL);	
 	}
 //	printf("PID of HEAD is: %d\n", head_ptr->item.process_id);
 	return head_ptr;
@@ -50,17 +49,5 @@ void KillSlaves(SLV_LIST* head_ptr){
 	//perror("Master killed the slaves.");
 }
 
-int AllocateSharedMemory(int* shared_total){
-	int mem_id;
-
-	mem_id = shmget(IPC_PRIVATE, sizeof(int), IPC_CREAT | 0666);
-	if (mem_id == -1){
-		perror("Error: shmget");
-	}
-
-	shared_total = (int*) shmat(mem_id, NULL, 0);
-
-	return mem_id;
-}
 
 

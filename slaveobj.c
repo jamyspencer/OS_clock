@@ -21,7 +21,7 @@ void addNode(struct list *head_ptr, pid_t pid){
 //returns the head_ptr address of the list that now has the node containing the pid passed removed
 struct list* destroyNode(struct list *head_ptr, pid_t pid){
 	struct list *temp = head_ptr;
-	while(temp->next != NULL){
+	while(temp != NULL && temp->next != NULL){
 		if (temp->item.process_id == pid){
 			if (temp == head_ptr){
 				return destroyHead(head_ptr);

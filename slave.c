@@ -77,7 +77,7 @@ int id = atoi(argv[4]);
 
 void CriticalSection(char* file_name, int* shr_tot){
 
-	fprintf(stderr, "In %d process. The total is %d\n", getpid(), (*shr_tot));
+	fprintf(stderr, "Entering Critical Section: %d: %d\n", getpid(), (*shr_tot));
 
 	char* msg;
 
@@ -89,7 +89,7 @@ void CriticalSection(char* file_name, int* shr_tot){
 	SaveLog(file_name, msg);
 
 	sleep(rand() % 3);
-	perror ("exiting critical section: ");
+	perror ("Exiting Critical Section");
 //	printf ("%s\n", msg);
 	free(msg);
 	msg = NULL;

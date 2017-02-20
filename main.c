@@ -117,6 +117,7 @@ int main ( int argc, char *argv[] ){
 	return 0;
 }
 void AlarmHandler(){
+	perror("Time ran out.");
 	KillSlaves(hd_ptr);
 	shmdt(shrd_data);
 	shmctl(shmid, IPC_RMID, NULL);

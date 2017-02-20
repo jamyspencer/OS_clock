@@ -24,7 +24,7 @@ int main ( int argc, char *argv[] ){
 
 	int num_slave_processes = 4;
 	char* num_increments = "3";
-	int secs_until_terminate = 20;
+	int max_run_time = 20;
 	int slave_count = 0;
 
 
@@ -39,7 +39,7 @@ int main ( int argc, char *argv[] ){
 	//check that there is the correct number of command line arguments
 
 
-	while ( (c = getopt(argc, argv, "hi:l:s:t")) != -1) {
+	while ( (c = getopt(argc, argv, "hi:l:s:t:")) != -1) {
 		switch(c){
 		case 'h':
 			printf("-h\tHelp Menu\n-i\tChanges the number of increments each slave process does(default is 3)\n");
@@ -54,17 +54,18 @@ int main ( int argc, char *argv[] ){
 			file_name = optarg;
 			break;
 		case 's':
+			
 			num_slave_processes = atoi(optarg);
 			break;
 		case 't':
-			secs_until_terminate = atoi(optarg);
+			max_run_time = atoi(optarg);
 			break;
 		case '?':
 			return 1;
 			break;
 		}
 	}
-	alarm(secs_until_terminate);
+	alarm(max_run_time);
 
 	    /* make the key: */
     if ((key = ftok("main.c", 'R')) == -1) {
@@ -92,6 +93,10 @@ int main ( int argc, char *argv[] ){
 	*(shrd_data + MAX_SLAVES*2+2) = (int)1;
 
 	for (i = 0; i < num_slave_processes; i++){
+		if (slave_count == MAX_SLAVES){
+			perror("Maximum processes are already running, exiting");
+			AbortProc();
+		}
 		hd_ptr = MakeSlave(hd_ptr, num_slave_processes, i, num_increments, file_name);
 		if (hd_ptr == NULL){
 			perror("Error: MakeSlave() returned NULL");
@@ -117,7 +122,7 @@ int main ( int argc, char *argv[] ){
 	return 0;
 }
 void AlarmHandler(){
-	perror("Time ran out.");
+	perror("Time ran out");
 	KillSlaves(hd_ptr);
 	shmdt(shrd_data);
 	shmctl(shmid, IPC_RMID, NULL);

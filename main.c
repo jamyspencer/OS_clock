@@ -11,6 +11,7 @@
 #include "slaveobj.h"
 
 void AbortProc();
+void AlarmHandler();
 
 static SLV_LIST* hd_ptr;
 static int* shrd_data;
@@ -30,7 +31,8 @@ int main ( int argc, char *argv[] ){
 	pid_t returning_child;
 	key_t key;
 
-	signal(2, AbortProc);	
+	signal(2, AbortProc);
+	signal(SIGALRM, AlarmHandler);
 
 	hd_ptr = malloc(sizeof(SLV_LIST));
 
@@ -62,6 +64,7 @@ int main ( int argc, char *argv[] ){
 			break;
 		}
 	}
+	alarm(secs_until_terminate);
 
 	    /* make the key: */
     if ((key = ftok("main.c", 'R')) == -1) {
@@ -112,6 +115,12 @@ int main ( int argc, char *argv[] ){
 	shmdt(shrd_data);
 	shmctl(shmid, IPC_RMID, NULL);
 	return 0;
+}
+void AlarmHandler(){
+	KillSlaves(hd_ptr);
+	shmdt(shrd_data);
+	shmctl(shmid, IPC_RMID, NULL);
+	exit(1);
 }
 
 void AbortProc(){

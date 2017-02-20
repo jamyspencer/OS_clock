@@ -65,10 +65,7 @@ int id = atoi(argv[4]);
 			while(choosing[j]);
 			while((bakery_vals[j] != 0) && (bakery_vals[j] < bakery_vals[id] || (bakery_vals[j] == bakery_vals[id] && j < id) ));
 		}
-		for (k = 0; k < num_slaves; k++){
-			printf ("Bakery val %d: %d\n", k, bakery_vals[k]);
 
-		}
 		CriticalSection(file_name, shrd_data);
 		bakery_vals[id] = 0;
 		

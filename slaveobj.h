@@ -1,7 +1,8 @@
 #ifndef SLAVEOBJ_H
 #define SLAVEOBJ_H
 
-#define SHM_SIZE sizeof(int)*32
+#define MAX_SLAVES 15
+#define SHM_SIZE sizeof(int)*(MAX_SLAVES*2+2)
 
 int* shrd_mem_addr;
 

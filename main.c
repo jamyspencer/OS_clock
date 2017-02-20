@@ -18,9 +18,6 @@ static int shmid;
 
 int main ( int argc, char *argv[] ){
 
-	const int MAX_SLAVES = 15;
-	
-
 	char* file_name = "test.out";
 	int c, i;
 
@@ -65,15 +62,13 @@ int main ( int argc, char *argv[] ){
 			break;
 		}
 	}
-perror("\n");
-printf("SHM_SIZE = %d\n", SHM_SIZE);
 
 	    /* make the key: */
     if ((key = ftok("main.c", 'R')) == -1) {
         perror("ftok");
         exit(1);
     }
-printf("Main Key: %d\n", key);
+//printf("Main Key: %d\n", key);
     /* connect to (and possibly create) the segment: */
     if ((shmid = shmget(key, SHM_SIZE, IPC_CREAT | 0666)) == -1) {
         perror("shmget");
@@ -86,15 +81,13 @@ printf("Main Key: %d\n", key);
         perror("shmat");
         exit(1);
     }
-	shrd_mem_addr = shrd_data;
-    /* read or modify the segment*/
-    *shrd_data = (int)0;
-	(*shrd_data)++;
-printf("Main value of shared: %d\n", *shrd_data);
-	
-printf("Main address of shared: %p\n", shrd_data);
 
-printf("%d\n", shrd_data);
+    /* read or modify the segment*/
+    for (i = 0; i < MAX_SLAVES*2+2; i++){
+		*(shrd_data + i) = (int)0;
+	}
+	*(shrd_data + MAX_SLAVES*2+2) = (int)1;
+
 	for (i = 0; i < num_slave_processes; i++){
 		hd_ptr = MakeSlave(hd_ptr, num_slave_processes, i, num_increments, file_name);
 		if (hd_ptr == NULL){

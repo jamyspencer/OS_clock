@@ -7,22 +7,21 @@
 #include <string.h>
 #include <sys/shm.h> 
 #include <time.h>
+#include <unistd.h>
 #include "forkerlib.h"
 #include "slaveobj.h"
 
 
 SLV_LIST* MakeSlave(SLV_LIST* head_ptr, int num_slave_processes, int i, char* num_increments, char* file_name){
-printf("The num is %d\n", i);
-printf("the other num is %d\n", num_slave_processes);
+
 	pid_t pid;
-	char* num_slaves;
-	char* id;
+	char num_slaves[5];
+	char id[5];
 	sprintf(num_slaves, "%d", num_slave_processes);
 	sprintf(id, "%d", i);
 
 	pid = fork();
 	if (pid < 0){
-		errno = ECHILD;
 		perror("Fork failed");
 		KillSlaves(head_ptr);
 		return 1;
@@ -38,15 +37,14 @@ printf("the other num is %d\n", num_slave_processes);
 		}
 	}
 	else if (pid == 0){
-printf("made it to child");
-		
 
-printf ("%s\n", num_slaves);
-printf ("%s\n", id);
+//printf ("%s\n", num_slaves);
+//printf ("%s\n", id);
 //perror("A slave has been born");
 		execl("./slave", "slave", num_increments, file_name, num_slaves, id, (char*) NULL);	
 	}
 //	printf("PID of HEAD is: %d\n", head_ptr->item.process_id);
+
 	return head_ptr;
 }
 

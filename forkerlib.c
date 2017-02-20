@@ -12,10 +12,13 @@
 
 
 SLV_LIST* MakeSlave(SLV_LIST* head_ptr, int num_slave_processes, int i, char* num_increments, char* file_name){
-
+printf("The num is %d\n", i);
+printf("the other num is %d\n", num_slave_processes);
 	pid_t pid;
 	char* num_slaves;
 	char* id;
+	sprintf(num_slaves, "%d", num_slave_processes);
+	sprintf(id, "%d", i);
 
 	pid = fork();
 	if (pid < 0){
@@ -24,8 +27,7 @@ SLV_LIST* MakeSlave(SLV_LIST* head_ptr, int num_slave_processes, int i, char* nu
 		KillSlaves(head_ptr);
 		return 1;
 	}
-	else if (pid > 0){
-//				perror("A slave has been born");
+	else if (pid > 0){			
 		if (head_ptr->item.process_id == 0){
 			head_ptr->item.process_id = pid;
 //				printf("PID of HEAD is: %d\n", head_ptr->item.process_id);
@@ -36,8 +38,12 @@ SLV_LIST* MakeSlave(SLV_LIST* head_ptr, int num_slave_processes, int i, char* nu
 		}
 	}
 	else if (pid == 0){
-		sprintf(num_slaves, "%d", num_slave_processes);
-		sprintf(id, "%d", i);
+printf("made it to child");
+		
+
+printf ("%s\n", num_slaves);
+printf ("%s\n", id);
+//perror("A slave has been born");
 		execl("./slave", "slave", num_increments, file_name, num_slaves, id, (char*) NULL);	
 	}
 //	printf("PID of HEAD is: %d\n", head_ptr->item.process_id);

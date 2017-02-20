@@ -20,11 +20,11 @@ int shmid;
 int* shrd_data;
 
 int i, j;
-int loop_quan = atoi(argv[1]);/*
+int loop_quan = atoi(argv[1]);
 char* file_name = argv[2];
 int num_slaves = atoi(argv[3]);
 int id = atoi(argv[4]);
-*/
+
 perror("made it to the slave");
 
 	/* make the key: */
@@ -56,7 +56,7 @@ perror("made it to the slave");
 
 printf("Slave value of shared: %d\n", *shrd_data);
 printf("in slave shared is %p\n", (int*)shrd_data);
-/*
+
 	for (i = 0; i < loop_quan; i++){
 		// Bakery Algorithm
 		
@@ -73,7 +73,7 @@ printf("in slave shared is %p\n", (int*)shrd_data);
 		bakery_vals[id] = 0;
 		
 	}
-*/
+
 	return 0;
 }
 

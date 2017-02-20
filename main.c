@@ -23,6 +23,7 @@ int main ( int argc, char *argv[] ){
 
 	char* file_name = "test.out";
 	int c, i;
+
 	int num_slave_processes = 4;
 	char* num_increments = "3";
 	int secs_until_terminate = 20;

@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include "slaveobj.h"
 
+
+
 struct list *returnTail(struct list *head_ptr){
 	struct list *temp = head_ptr;
 	while(temp->next != NULL){

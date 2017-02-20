@@ -19,18 +19,18 @@ static int shmid;
 int main ( int argc, char *argv[] ){
 
 	const int MAX_SLAVES = 15;
-	const int SHM_SIZE = sizeof(int);
+	
 
-	char* log_file_name = "test.out";
+	char* file_name = "test.out";
 	int c, i;
 	int num_slave_processes = 4;
-	int num_increments = 3;
+	char* num_increments = "3";
 	int secs_until_terminate = 20;
 	int slave_count = 0;
 
 
 	pid_t returning_child;
-	key_t key = 81380;
+	key_t key;
 
 	signal(2, AbortProc);	
 
@@ -48,10 +48,10 @@ int main ( int argc, char *argv[] ){
 			return 0;
 			break;
 		case 'i':
-			num_increments = atoi(optarg);
+			num_increments = optarg;
 			break;
 		case 'l':
-			log_file_name = optarg;
+			file_name = optarg;
 			break;
 		case 's':
 			num_slave_processes = atoi(optarg);
@@ -65,29 +65,37 @@ int main ( int argc, char *argv[] ){
 		}
 	}
 perror("\n");
+printf("SHM_SIZE = %d\n", SHM_SIZE);
 
+	    /* make the key: */
+    if ((key = ftok("main.c", 'R')) == -1) {
+        perror("ftok");
+        exit(1);
+    }
+printf("Main Key: %d\n", key);
     /* connect to (and possibly create) the segment: */
-    if ((shmid = shmget(IPC_PRIVATE, SHM_SIZE, 0666 | IPC_CREAT)) == -1) {
+    if ((shmid = shmget(key, SHM_SIZE, IPC_CREAT | 0666)) == -1) {
         perror("shmget");
         exit(1);
     }
 
     /* attach to the segment to get a pointer to it: */
-    shrd_data = shmat(shmid, NULL, 0);
+    shrd_data = shmat(shmid, (void*) NULL, 0);
     if (shrd_data == (int *)(-1)) {
         perror("shmat");
         exit(1);
     }
-
+	shrd_mem_addr = shrd_data;
     /* read or modify the segment*/
     *shrd_data = (int)0;
-
+	(*shrd_data)++;
+printf("Main value of shared: %d\n", *shrd_data);
 	
-printf("Main value of shared: %d", *shrd_data);
+printf("Main address of shared: %p\n", shrd_data);
 
 printf("%d\n", shrd_data);
 	for (i = 0; i < num_slave_processes; i++){
-		hd_ptr = MakeSlave(hd_ptr, shmid);
+		hd_ptr = MakeSlave(hd_ptr, num_slave_processes, i, num_increments, file_name);
 		if (hd_ptr == NULL){
 			perror("Error: MakeSlave() returned NULL");
 			exit(1);

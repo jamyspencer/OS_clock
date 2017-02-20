@@ -11,10 +11,11 @@
 #include "slaveobj.h"
 
 
-SLV_LIST* MakeSlave(SLV_LIST* head_ptr, int id){
+SLV_LIST* MakeSlave(SLV_LIST* head_ptr, int num_slave_processes, int i, char* num_increments, char* file_name){
 
 	pid_t pid;
-	int i;
+	char* num_slaves;
+	char* id;
 
 	pid = fork();
 	if (pid < 0){
@@ -35,7 +36,9 @@ SLV_LIST* MakeSlave(SLV_LIST* head_ptr, int id){
 		}
 	}
 	else if (pid == 0){
-		execl("./slave", "./slave", sprintf("%d", id),NULL);	
+		sprintf(num_slaves, "%d", num_slave_processes);
+		sprintf(id, "%d", i);
+		execl("./slave", "slave", num_increments, file_name, num_slaves, id, (char*) NULL);	
 	}
 //	printf("PID of HEAD is: %d\n", head_ptr->item.process_id);
 	return head_ptr;

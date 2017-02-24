@@ -1,8 +1,8 @@
 # Written by Jamy Spencer 30 Jan 2017 
 CC=gcc 
 DEBUG_ARGS=-g -Wall
-MAIN=master
-SECONDARY=slave
+MAIN=oss
+SECONDARY=user
 OBJS1=main.o forkerlib.o slaveobj.o
 OBJS2=slave.o 
 DEPS=forkerlib.h  slaveobj.h

@@ -12,6 +12,7 @@
 #include "slaveobj.h"
 
 
+
 SLV_LIST* MakeChildren(SLV_LIST* head_ptr, int* child_count, int* total_spawned, int num_children){
 
 	pid_t pid;
@@ -29,13 +30,13 @@ SLV_LIST* MakeChildren(SLV_LIST* head_ptr, int* child_count, int* total_spawned,
 			}
 			else{
 				addNode(head_ptr, pid);
-				(*child_count)++;
-				(*total_spawned)++;
+//printf("Total: %d here: %d\n", *total_spawned, *child_count);
 			}
+			(*child_count)++;
+			(*total_spawned)++;
 		}
 		else if (pid == 0){
 			execl("./user", "user", (char*) NULL);
-
 		}
 		
 	}
@@ -70,19 +71,18 @@ char* MakeMsg(int* shr_tot){
 
 	return msg;
 }
-void clock_tick(int* clock, int increment){
-	int* my_sec = clock;
-	int* my_nsec = (clock + 1);
-	int i;
 
-	for (i = 0, i < increment; i++){
-		if (*my_nsec == 999999999){
-			*my_nsec = 0;
-			(*my_sec)++;
+void clock_tick(struct timespec *clock, int increment){
+
+	while (increment){
+		if (clock->tv_nsec < (BILLION - increment)){
+			(clock->tv_nsec) += increment;
+			increment = 0;
 		}
-		else {
-			(*my_sec)++;
+		else{
+			
 		}
 	}
+//	fprintf(stderr, "SYSTEM CLOCK: %lu %lu\n", clock->tv_sec, clock->tv_nsec);
 }
 

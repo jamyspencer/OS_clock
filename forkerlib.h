@@ -8,6 +8,6 @@ SLV_LIST* MakeChildren(SLV_LIST* head_ptr, int* child_count, int* total_spawned,
 void KillSlaves(SLV_LIST* hd_ptr);
 char* MakeMsg(int* shr_tot);
 int SaveLog(char* log_file_name, char* msg);
-void clock_tick(int* clock, int increment);
+void clock_tick(struct timespec *clock, int increment);
 
 #endif

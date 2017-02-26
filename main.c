@@ -1,27 +1,30 @@
 /* Written by Jamy Spencer 23 Feb 2017 */
-
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/ipc.h>
 #include <sys/shm.h> 
+#include <sys/msg.h> 
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include "forkerlib.h"
 #include "slaveobj.h"
-#include "ossclock.h"
+
 
 void AbortProc();
 void AlarmHandler();
 
 static SLV_LIST* hd_ptr;
-static int* my_clock;
+static struct timespec *my_clock;
 static int shmid;
+static int lock_que_id;
 
 int main ( int argc, char *argv[] ){
 
 	char* file_name = "test.out";
-	int c, i;
+	int c;
 
 	int num_children = 5;
 	int max_run_time = 20;
@@ -33,7 +36,6 @@ int main ( int argc, char *argv[] ){
 
 	signal(2, AbortProc);
 	signal(SIGALRM, AlarmHandler);
-
 	hd_ptr = malloc(sizeof(SLV_LIST));
 
 
@@ -64,7 +66,28 @@ int main ( int argc, char *argv[] ){
 	}
 	alarm(max_run_time);
 
+	//Initiallize clock
+	struct timespec *my_clock;
 	my_clock = shrMemMakeAttach(&shmid);
+	my_clock->tv_nsec = 0;
+	my_clock->tv_sec = 0;
+	
+	
+	//set up lock queue with a message to allow the first user in
+	lock_que_id = lockMsgMakeAttach();
+	msg_t my_lock;
+	my_lock.mtype = 9;
+//	strcpy(my_lock.mtext, '\0');
+	if ((msgsnd(lock_que_id, &my_lock, sizeof(msg_t), IPC_NOWAIT)) == -1){
+		perror("msgsnd, initial message");
+	}
+
+
+	//set up msg_t to send acknowledgement to exiting users
+	msg_t xt_user;
+	xt_user.mtype = 2;
+	strcpy(xt_user.mtext, "ys");
+	msg_t unlock;
 
 	hd_ptr = MakeChildren(hd_ptr, &child_count, &total_spawned, num_children);
 	if (hd_ptr == NULL){
@@ -73,25 +96,43 @@ int main ( int argc, char *argv[] ){
 	}
 
 
-	while(total_spawned < 100 && *my_clock < 2){
-		
-		if (waitpid(-1, NULL, WNOHANG) != 0){
-			returning_child = wait(NULL);
+
+	do{//spin-waiting for users to return while advancing clock
+
+		if ((returning_child = waitpid(-1, NULL, WNOHANG)) != 0){
+
 			if (returning_child != -1){
 				hd_ptr = destroyNode(hd_ptr, returning_child);
 				printf("Child %d returned/removed\n", returning_child);
+				child_count--;
+
 			}
-			child_count--;
-			hd_ptr = MakeChildren(hd_ptr, &child_count, &total_spawned, num_children);
-			if (hd_ptr == NULL){
-				perror("List returned NULL, exiting");
-				AbortProc();
+			
+			if (total_spawned < 100 && my_clock->tv_sec < 2){
+				hd_ptr = MakeChildren(hd_ptr, &child_count, &total_spawned, num_children);
+				if (hd_ptr == NULL){
+					perror("List returned NULL, exiting");
+					AbortProc();
+				}
 			}
 		}
-		clock_tick(my_clock, 500);
+		//
+		if((msgrcv(lock_que_id, &unlock, sizeof(msg_t), 0, 0)) ==-1){
+			perror("msgrcv");
+		}
+		if(strcmp(unlock.mtext, "") != 0){
+			if ((msgsnd(lock_que_id, &xt_user, sizeof(msg_t), IPC_NOWAIT)) == -1){
+				perror("msgsnd");
+			}
+		}
+		clock_tick(my_clock, 29000);
+		if ((msgsnd(lock_que_id, &my_lock, sizeof(msg_t), IPC_NOWAIT)) == -1){
+			perror("msgsnd, post-clock-tick");
+		}
 
-	}
+	}while(child_count > 0);
 
+	msgctl(lock_que_id, IPC_RMID, NULL);
 	shmdt(my_clock);
 	shmctl(shmid, IPC_RMID, NULL);
 	return 0;
@@ -100,6 +141,7 @@ int main ( int argc, char *argv[] ){
 void AlarmHandler(){
 	perror("Time ran out");
 	KillSlaves(hd_ptr);
+	msgctl(lock_que_id, IPC_RMID, NULL);
 	shmdt(my_clock);
 	shmctl(shmid, IPC_RMID, NULL);
 	exit(1);
@@ -108,6 +150,7 @@ void AlarmHandler(){
 void AbortProc(){
 //	signal(2, AbortProc);
 	KillSlaves(hd_ptr);
+	msgctl(lock_que_id, IPC_RMID, NULL);
 	shmdt(my_clock);
 	shmctl(shmid, IPC_RMID, NULL);
 	exit(1);

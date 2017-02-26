@@ -3,7 +3,12 @@
 #define SLAVEOBJ_H
 
 #define MAX_USERS 15
-#define SHM_SIZE sizeof(int)*2
+
+#ifndef BILLION
+#define BILLION 1000000000
+#endif
+
+
 
 struct info{
 	pid_t process_id;
@@ -17,13 +22,23 @@ struct list{
 	struct list* prev;
 };
 
+
+typedef struct queue_msg{
+	long mtype;
+	char mtext[15];
+} msg_t;
+
+
+struct timespec* shrMemMakeAttach(int* shmid);
+int lockMsgMakeAttach(void);
 struct list *returnTail(struct list *head_ptr);
 void addNode(struct list *head_ptr, pid_t pid);
 struct list* destroyNode(struct list *head_ptr, pid_t pid);
 struct list* destroyHead(struct list *head_ptr);
-int* shrMemMakeAttach(int*);
+
 
 #define SLV_INFO struct info
 #define SLV_LIST struct list
+
 
 #endif

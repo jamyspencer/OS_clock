@@ -7,7 +7,9 @@
 #ifndef BILLION
 #define BILLION 1000000000
 #endif
-
+#ifndef MAX_MSG_LEN
+#define MAX_MSG_LEN 12
+#endif
 
 
 struct info{
@@ -24,10 +26,9 @@ struct list{
 
 
 typedef struct queue_msg{
-	long mtype;
-	char mtext[15];
+	long int mtype;
+	char mtext[1];
 } msg_t;
-
 
 struct timespec* shrMemMakeAttach(int* shmid);
 int lockMsgMakeAttach(void);

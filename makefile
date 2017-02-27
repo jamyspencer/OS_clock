@@ -1,6 +1,7 @@
 # Written by Jamy Spencer 30 Jan 2017 
 CC=gcc 
-DEBUG_ARGS=-g -Wall
+N_STACK_P=-fno-stack-protector
+DEBUG_ARGS=-g -Wall 
 MAIN=oss
 SECONDARY=user
 OBJS1=main.o forkerlib.o slaveobj.o

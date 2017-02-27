@@ -75,19 +75,22 @@ int main ( int argc, char *argv[] ){
 	
 	//set up lock queue with a message to allow the first user in
 	lock_que_id = lockMsgMakeAttach();
-	msg_t my_lock;
-	my_lock.mtype = 9;
-//	strcpy(my_lock.mtext, '\0');
-	if ((msgsnd(lock_que_id, &my_lock, sizeof(msg_t), IPC_NOWAIT)) == -1){
+	msg_t *my_lock;
+	my_lock = malloc (sizeof(msg_t) + 4);
+	(*my_lock).mtype = 9;
+	strncpy((*my_lock).mtext, "main", 4);
+	if ((msgsnd(lock_que_id, my_lock, sizeof(msg_t) + 4, 0)) == -1){
 		perror("msgsnd, initial message");
 	}
 
 
 	//set up msg_t to send acknowledgement to exiting users
-	msg_t xt_user;
-	xt_user.mtype = 2;
-	strcpy(xt_user.mtext, "ys");
-	msg_t unlock;
+	msg_t* xt_user;
+	xt_user = malloc(sizeof(msg_t) + 1);
+	(*xt_user).mtype = 2;
+	strncpy((*xt_user).mtext, "y", 2);
+	msg_t* unlock;
+	unlock = malloc(sizeof(msg_t) + 11);
 
 	hd_ptr = MakeChildren(hd_ptr, &child_count, &total_spawned, num_children);
 	if (hd_ptr == NULL){
@@ -117,19 +120,22 @@ int main ( int argc, char *argv[] ){
 			}
 		}
 		//
-		if((msgrcv(lock_que_id, &unlock, sizeof(msg_t), 0, 0)) ==-1){
+		if((msgrcv(lock_que_id, unlock, sizeof(msg_t) + 11, 0, 0)) ==-1){
 			perror("msgrcv");
 		}
-		if(strcmp(unlock.mtext, "") != 0){
-			if ((msgsnd(lock_que_id, &xt_user, sizeof(msg_t), IPC_NOWAIT)) == -1){
+//		printf("Message received: %s\n", unlock->mtext);
+		if(unlock->mtype == 1){
+			if ((msgsnd(lock_que_id, xt_user, sizeof(msg_t) + 1, 0)) == -1){
 				perror("msgsnd");
 			}
 		}
-		clock_tick(my_clock, 29000);
-		if ((msgsnd(lock_que_id, &my_lock, sizeof(msg_t), IPC_NOWAIT)) == -1){
-			perror("msgsnd, post-clock-tick");
+		else{
+			clock_tick(my_clock, 29000);
+			if ((msgsnd(lock_que_id, my_lock, sizeof(msg_t) + 1, 0)) == -1){
+				perror("msgsnd, post-clock-tick");
+			}
 		}
-
+		
 	}while(child_count > 0);
 
 	msgctl(lock_que_id, IPC_RMID, NULL);

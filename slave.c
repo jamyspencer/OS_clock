@@ -25,13 +25,19 @@ int main ( int argc, char *argv[] ){
 	
 
 	int doing_it = GO;
+	int lock_len = 1;
 
 	//initiallize locking message
-	msg_t my_lock;
-	my_lock.mtype = 9;
-	strcpy(my_lock.mtext, '\0');
+	msg_t *my_lock;
+	my_lock = malloc(sizeof(msg_t) + 6);
+	(*my_lock).mtype = 9;
+	snprintf((*my_lock).mtext, 6, "%04d", getpid());
 	int lock_que = lockMsgMakeAttach();
-	msg_t unlock;;
+
+
+	//initiallize unlocking message
+	msg_t *unlock;
+	unlock = malloc(sizeof(msg_t) + 11);
 
 	//get shared memory to the system clock
 	int clock_memid;
@@ -40,13 +46,14 @@ int main ( int argc, char *argv[] ){
 	
 
 	//protect initial time assignment
-	if((msgrcv(lock_que, &unlock, sizeof(msg_t), 9, 0)) == -1){
+	if((msgrcv(lock_que, unlock, sizeof(msg_t) + 11, 9, 0)) == -1){
 		perror("msgrcv");
 	}
+printf("Text from queue 9: %s\n", (*unlock).mtext);
 	start.tv_sec = sys_clock->tv_sec;
 	start.tv_nsec = sys_clock->tv_nsec;
 
-	if ((msgsnd(lock_que, &my_lock, sizeof(msg_t), IPC_NOWAIT)) == -1){
+	if ((msgsnd(lock_que, my_lock, sizeof(msg_t) + lock_len, IPC_NOWAIT)) == -1){
 		perror("msgsnd");
 	}	
 	//end initial time protection
@@ -60,10 +67,10 @@ int main ( int argc, char *argv[] ){
 
 	while (doing_it){
 	//Critical Section--------------------------------------------------------
-		if((msgrcv(lock_que, &unlock, sizeof(msg_t), 9, 0)) == -1){
+		if((msgrcv(lock_que, my_lock, sizeof(msg_t) + lock_len, 9, 0)) == -1){
 			perror("msgrcv, slave");
 		}
-		
+		printf("Text from queue 9: %s\n", (*my_lock).mtext);
 		fprintf(stderr, "Entering: %d\n", getpid());
 
 		now.tv_sec = sys_clock->tv_sec;
@@ -75,27 +82,36 @@ int main ( int argc, char *argv[] ){
 
 		if (doing_it == STOP){
 			//initiallize exit message
-			msg_t x_msg;
-			x_msg.mtype = 1;
-			
-			sprintf(x_msg.mtext,"%02lu%09lu", now.tv_sec, now.tv_nsec);
+			msg_t* x_msg;
+			x_msg = malloc(sizeof(msg_t) + 11);
+			x_msg->mtype = 1;
+			msg_t *shut_down;
+			shut_down = malloc (sizeof(msg_t) + lock_len);
+			strncpy(x_msg->mtext, "y", MAX_MSG_LEN);
 
-			if((msgsnd(lock_que, &x_msg, sizeof(msg_t), IPC_NOWAIT)) == -1){
+			snprintf(x_msg->mtext, MAX_MSG_LEN,"%02lu%09lu", now.tv_sec, now.tv_nsec);
+
+			if((msgsnd(lock_que, x_msg, sizeof(msg_t), IPC_NOWAIT)) == -1){
 				perror("msgsnd: x_msg");
 			}
-			if((msgrcv(lock_que, &x_msg, sizeof(msg_t), 2, 0)) == -1){
+			if((msgrcv(lock_que, shut_down, sizeof(msg_t) + 1, 2, 0)) == -1){
 				perror("msgrcv, returning");
 			}
+			free (x_msg);
+			free (shut_down);
+printf("Message from OS %s\n", shut_down->mtext);
 		}
 		fprintf(stderr, "Exiting: %d\n", getpid());
 
-		if ((msgsnd(lock_que, &my_lock, sizeof(msg_t), IPC_NOWAIT)) == -1){
+		if ((msgsnd(lock_que, my_lock, sizeof(msg_t) + lock_len, IPC_NOWAIT)) == -1){
 			perror("msgsnd");
 		}
+		
 	//End Critical Section---------------------------------------------------			
 	}
 
-
+	free (my_lock);
+	
 	return 0;
 }
 

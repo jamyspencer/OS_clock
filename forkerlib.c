@@ -80,7 +80,8 @@ void clock_tick(struct timespec *clock, int increment){
 			increment = 0;
 		}
 		else{
-			
+			(clock->tv_sec)++;
+			clock->tv_nsec = ((clock->tv_nsec) + increment - BILLION);
 		}
 	}
 //	fprintf(stderr, "SYSTEM CLOCK: %lu %lu\n", clock->tv_sec, clock->tv_nsec);

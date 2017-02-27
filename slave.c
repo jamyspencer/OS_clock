@@ -30,7 +30,7 @@ int main ( int argc, char *argv[] ){
 	//initiallize locking message
 	msg_t *my_lock;
 	my_lock = malloc(sizeof(msg_t) + 6);
-	(*my_lock).mtype = 9;
+	(*my_lock).mtype = 3;
 	snprintf((*my_lock).mtext, 6, "%04d", getpid());
 	int lock_que = lockMsgMakeAttach();
 
@@ -46,10 +46,10 @@ int main ( int argc, char *argv[] ){
 	
 
 	//protect initial time assignment
-	if((msgrcv(lock_que, unlock, sizeof(msg_t) + 11, 9, 0)) == -1){
+	if((msgrcv(lock_que, unlock, sizeof(msg_t) + 11, 3, 0)) == -1){
 		perror("msgrcv");
 	}
-printf("Text from queue 9: %s\n", (*unlock).mtext);
+//printf("Text from queue 3: %s\n", (*unlock).mtext);
 	start.tv_sec = sys_clock->tv_sec;
 	start.tv_nsec = sys_clock->tv_nsec;
 
@@ -67,11 +67,11 @@ printf("Text from queue 9: %s\n", (*unlock).mtext);
 
 	while (doing_it){
 	//Critical Section--------------------------------------------------------
-		if((msgrcv(lock_que, my_lock, sizeof(msg_t) + lock_len, 9, 0)) == -1){
+		if((msgrcv(lock_que, my_lock, sizeof(msg_t) + 11, 3, 0)) == -1){
 			perror("msgrcv, slave");
 		}
-		printf("Text from queue 9: %s\n", (*my_lock).mtext);
-		fprintf(stderr, "Entering: %d\n", getpid());
+//		printf("Text from queue 3: %s\n", (*my_lock).mtext);
+//		fprintf(stderr, "Entering: %d\n", getpid());
 
 		now.tv_sec = sys_clock->tv_sec;
 		now.tv_nsec = sys_clock->tv_nsec;
@@ -85,11 +85,12 @@ printf("Text from queue 9: %s\n", (*unlock).mtext);
 			msg_t* x_msg;
 			x_msg = malloc(sizeof(msg_t) + 11);
 			x_msg->mtype = 1;
+			snprintf(x_msg->mtext, MAX_MSG_LEN,"%02lu%09lu", now.tv_sec, now.tv_nsec);
+
+			//initiallize receiver message
 			msg_t *shut_down;
 			shut_down = malloc (sizeof(msg_t) + lock_len);
-			strncpy(x_msg->mtext, "y", MAX_MSG_LEN);
 
-			snprintf(x_msg->mtext, MAX_MSG_LEN,"%02lu%09lu", now.tv_sec, now.tv_nsec);
 
 			if((msgsnd(lock_que, x_msg, sizeof(msg_t), IPC_NOWAIT)) == -1){
 				perror("msgsnd: x_msg");
@@ -99,9 +100,8 @@ printf("Text from queue 9: %s\n", (*unlock).mtext);
 			}
 			free (x_msg);
 			free (shut_down);
-printf("Message from OS %s\n", shut_down->mtext);
 		}
-		fprintf(stderr, "Exiting: %d\n", getpid());
+//		fprintf(stderr, "Exiting: %d\n", getpid());
 
 		if ((msgsnd(lock_que, my_lock, sizeof(msg_t) + lock_len, IPC_NOWAIT)) == -1){
 			perror("msgsnd");
@@ -111,7 +111,7 @@ printf("Message from OS %s\n", shut_down->mtext);
 	}
 
 	free (my_lock);
-	
+	free (unlock);
 	return 0;
 }
 
@@ -129,10 +129,10 @@ struct timespec addTimeSpecs(struct timespec t1, struct timespec t2){
 }
 
 int is_t1_grtr_than_t2(struct timespec t1, struct timespec t2){
-	if (t1.tv_sec > t2.tv_sec) return 1;
-	else if (t1.tv_sec < t2.tv_sec) return 0;
-	else if (t1.tv_nsec > t2.tv_nsec) return 1;
-	return 0;
+	if (t1.tv_sec > t2.tv_sec) return GO;
+	else if (t1.tv_sec < t2.tv_sec) return STOP;
+	else if (t1.tv_nsec > t2.tv_nsec) return GO;
+	return STOP;
 }
 
 	

@@ -14,7 +14,8 @@
 
 struct info{
 	pid_t process_id;
-	int queue_num;
+	char* msg;
+
 }; 
 
 
@@ -32,10 +33,7 @@ typedef struct queue_msg{
 
 struct timespec* shrMemMakeAttach(int* shmid);
 int lockMsgMakeAttach(void);
-struct list *returnTail(struct list *head_ptr);
-void addNode(struct list *head_ptr, pid_t pid);
-struct list* destroyNode(struct list *head_ptr, pid_t pid);
-struct list* destroyHead(struct list *head_ptr);
+
 
 
 #define SLV_INFO struct info

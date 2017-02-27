@@ -36,7 +36,7 @@ int main ( int argc, char *argv[] ){
 
 	signal(2, AbortProc);
 	signal(SIGALRM, AlarmHandler);
-	hd_ptr = malloc(sizeof(SLV_LIST));
+	hd_ptr = NULL;
 
 
 	while ( (c = getopt(argc, argv, "hi:l:s:t:")) != -1) {
@@ -77,7 +77,7 @@ int main ( int argc, char *argv[] ){
 	lock_que_id = lockMsgMakeAttach();
 	msg_t *my_lock;
 	my_lock = malloc (sizeof(msg_t) + 4);
-	(*my_lock).mtype = 9;
+	(*my_lock).mtype = 3;
 	strncpy((*my_lock).mtext, "main", 4);
 	if ((msgsnd(lock_que_id, my_lock, sizeof(msg_t) + 4, 0)) == -1){
 		perror("msgsnd, initial message");
@@ -130,7 +130,7 @@ int main ( int argc, char *argv[] ){
 			}
 		}
 		else{
-			clock_tick(my_clock, 29000);
+			clock_tick(my_clock, 329000);
 			if ((msgsnd(lock_que_id, my_lock, sizeof(msg_t) + 1, 0)) == -1){
 				perror("msgsnd, post-clock-tick");
 			}
@@ -138,6 +138,9 @@ int main ( int argc, char *argv[] ){
 		
 	}while(child_count > 0);
 
+	free(my_lock);
+	free(unlock);
+	free(xt_user);
 	msgctl(lock_que_id, IPC_RMID, NULL);
 	shmdt(my_clock);
 	shmctl(shmid, IPC_RMID, NULL);

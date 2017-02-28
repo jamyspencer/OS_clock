@@ -77,9 +77,7 @@ int main ( int argc, char *argv[] ){
 	my_lock = malloc (sizeof(msg_t) + 4);
 	(*my_lock).mtype = 3;
 	strncpy((*my_lock).mtext, "main", 4);
-	if ((msgsnd(lock_que_id, my_lock, sizeof(msg_t) + 4, 0)) == -1){
-		perror("msgsnd, initial message");
-	}
+
 
 	//set up msg_t to send acknowledgement to exiting users
 	msg_t* xt_user;
@@ -94,7 +92,9 @@ int main ( int argc, char *argv[] ){
 		perror("List returned NULL, exiting");
 		AbortProc();
 	}
-
+	if ((msgsnd(lock_que_id, my_lock, sizeof(msg_t) + 4, 0)) == -1){
+		perror("msgsnd, initial message");
+	}
 	do{//spin-waiting for users to return while advancing clock
 
 		if ((returning_child = waitpid(-1, NULL, WNOHANG)) != 0){
@@ -113,14 +113,15 @@ int main ( int argc, char *argv[] ){
 				}
 			}
 		}
-		clock_tick(my_clock, 332000);
+		//
 		if((msgrcv(lock_que_id, unlock, sizeof(msg_t) + 11, 0, 0)) ==-1){
 			perror("msgrcv");
 		}
 //		printf("Message received: %s\n", unlock->mtext);
-
+		clock_tick(my_clock, 92000);
 		if(unlock->mtype == 1){
-			appendMsg(hd_ptr, my_clock, unlock->pid, unlock->mtext, file_name);
+//printf ("appending %d \n", unlock->pid);
+			appendMsg(hd_ptr, my_clock, unlock->pid, unlock->mtext);
 			if ((msgsnd(lock_que_id, xt_user, sizeof(msg_t) + 1, 0)) == -1){
 				perror("msgsnd");
 			}
@@ -130,7 +131,8 @@ int main ( int argc, char *argv[] ){
 				perror("msgsnd, post-clock-tick");
 			}
 		}
-		
+
+//	printf("Total Users: %d \t Active users: %d\n", total_spawned, child_count);	
 	}while(child_count > 0);
 
 	free(my_lock);
@@ -158,4 +160,14 @@ void AbortProc(){
 	shmdt(my_clock);
 	shmctl(shmid, IPC_RMID, NULL);
 	exit(1);
+}
+
+PrintList(){
+	struct list * this = hd_ptr;
+	
+	while (this){
+		printf("pid: %d\n", this->item.process_id);
+		this = this->next;
+	}
+	printf("*****END*******\n");
 }

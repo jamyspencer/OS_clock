@@ -49,7 +49,7 @@ int main ( int argc, char *argv[] ){
 	if((msgrcv(lock_que, unlock, sizeof(msg_t) + 11, 3, 0)) == -1){
 		perror("msgrcv");
 	}
-//printf("Text from queue 3: %s\n", (*unlock).mtext);
+
 	start.tv_sec = sys_clock->tv_sec;
 	start.tv_nsec = sys_clock->tv_nsec;
 
@@ -70,11 +70,13 @@ int main ( int argc, char *argv[] ){
 		if((msgrcv(lock_que, my_lock, sizeof(msg_t) + 11, 3, 0)) == -1){
 			perror("msgrcv, slave");
 		}
+
 		now.tv_sec = sys_clock->tv_sec;
 		now.tv_nsec = sys_clock->tv_nsec;
 		doing_it = is_t1_grtr_than_t2(x_time, now);
 
 		if (doing_it == STOP){
+
 			//initiallize exit message
 			msg_t* x_msg;
 			x_msg = malloc(sizeof(msg_t) + 11);

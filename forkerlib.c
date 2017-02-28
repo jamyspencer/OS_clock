@@ -69,11 +69,11 @@ struct list* findNodeByPid(struct list *head_ptr, pid_t pid){
 	return NULL;
 }
 
-void appendMsg(struct list* head_ptr, struct timespec *clock, pid_t pid, char* done_time, char* log_name){
+void appendMsg(struct list* head_ptr, struct timespec *clock, pid_t pid, char* done_time){
 	struct list *done = findNodeByPid(head_ptr, pid);
 
 	done->item.msg = MakeMsg(clock, done_time, pid);//malloc'd
-	SaveLog(log_name, done->item.msg, pid);
+
 	return;
 }
 
@@ -82,21 +82,18 @@ char* MakeMsg(struct timespec* clock, char* x_time, pid_t pid){
 	char buffer[110];
 	char* msg;
 
-//printf("Clock Time: %02lu%09lu\n", clock->tv_sec, clock->tv_nsec);
-//printf("Finish Time: \n", x_time);
-
 	snprintf(buffer, 110, "Master: Child(%d) is terminating at my time %02lu%09lu because it reached %s in slave\n", pid, clock->tv_sec, clock->tv_nsec, x_time);
 	buffer[109] = '\0';
 	msg = (char*) malloc (strlen(buffer));
 	sprintf(msg, "%s", buffer);
-	printf("%s", msg);
+//	printf("%s", msg);
 	return msg;//malloc'd
 }
 
 int SaveLog(char* log_file_name, char* msg, pid_t pid) {
 	FILE* file_write = fopen(log_file_name, "a");
 
-	if (msg ==NULL){
+	if (msg == NULL){
 		fprintf(file_write, "Process: %d shut down abnormally.");
 	}
 	else{
@@ -105,10 +102,13 @@ int SaveLog(char* log_file_name, char* msg, pid_t pid) {
 	fclose(file_write);
 	return 0;
 }
+
 //returns the head_ptr address of the list that now has the node containing the pid passed removed
 struct list* destroyNode(struct list *head_ptr, pid_t pid, char* file_name){
 	struct list *temp = findNodeByPid(head_ptr, pid);
 	struct list *new_head;
+
+	SaveLog(file_name, temp->item.msg, temp->item.process_id);
 	if (temp == NULL){
 		printf("Couldn\'t find %d ", pid);
 		return head_ptr;
@@ -119,7 +119,6 @@ struct list* destroyNode(struct list *head_ptr, pid_t pid, char* file_name){
 			if (new_head){//set the new heads prev to NULL
 				new_head->prev = NULL;
 			}
-			SaveLog(file_name, temp->item.msg, temp->item.process_id);
 			free(temp->item.msg);
 			free(temp);
 			temp = NULL;		
@@ -128,14 +127,14 @@ struct list* destroyNode(struct list *head_ptr, pid_t pid, char* file_name){
 		return new_head;
 	}
 	else if (temp->next == NULL){//delete tail
-		SaveLog(file_name, temp->item.msg, temp->item.process_id);
+
 		free(temp->item.msg);
 		(temp->prev)->next = NULL;
 		free(temp);
 		return head_ptr;
 	}
 	else{//delete a mid
-		SaveLog(file_name, temp->item.msg, temp->item.process_id);
+
 		(temp->prev)->next = temp->next;
 		(temp->next)->prev = temp->prev;
 		free(temp->item.msg);
@@ -151,8 +150,6 @@ void KillSlaves(struct list *head_ptr, char* file_name){
 		destroyNode(head_ptr, (head_ptr->item).process_id, file_name);	
 	}
 }
-
-
 
 
 void clock_tick(struct timespec *clock, int increment){

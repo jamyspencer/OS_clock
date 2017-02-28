@@ -4,15 +4,16 @@
 
 #include "slaveobj.h"
 
-SLV_LIST* MakeChildren(SLV_LIST* head_ptr, int* child_count, int* total_spawned, int num_children);
-void KillSlaves(SLV_LIST* hd_ptr);
-char* MakeMsg(struct timespec* clock, char* x_time);
-int SaveLog(char* log_file_name, char* msg);
+struct list *MakeChildren(struct list *head_ptr, int* child_count, int* total_spawned, int num_children);
+void KillSlaves(struct list *hd_ptr, char* file_name);
+char* MakeMsg(struct timespec* clock, char* x_time, pid_t pid);
+int SaveLog(char* log_file_name, char* msg, pid_t pid);
 void clock_tick(struct timespec *clock, int increment);
+void appendMsg(struct list* head_ptr, struct timespec *clock, pid_t pid, char* done_time, char*);
 struct list *returnTail(struct list *head_ptr);
 struct list *addNode(struct list *head_ptr, pid_t pid);
-struct list* destroyNode(struct list *head_ptr, pid_t pid);
-void destroyHead(struct list *head_ptr);
+struct list* destroyNode(struct list *head_ptr, pid_t pid, char* file_name);
+
 struct list* findNodeByPid(struct list *head_ptr, pid_t pid);
 
 #endif

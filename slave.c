@@ -70,14 +70,8 @@ int main ( int argc, char *argv[] ){
 		if((msgrcv(lock_que, my_lock, sizeof(msg_t) + 11, 3, 0)) == -1){
 			perror("msgrcv, slave");
 		}
-//		printf("Text from queue 3: %s\n", (*my_lock).mtext);
-//		fprintf(stderr, "Entering: %d\n", getpid());
-
 		now.tv_sec = sys_clock->tv_sec;
 		now.tv_nsec = sys_clock->tv_nsec;
-//		fprintf(stderr, "Return time is: %lu %lu\n", x_time.tv_sec, x_time.tv_nsec);
-//		fprintf(stderr, "Current time is: %lu %lu\n", now.tv_sec, now.tv_nsec);
-
 		doing_it = is_t1_grtr_than_t2(x_time, now);
 
 		if (doing_it == STOP){
@@ -85,6 +79,7 @@ int main ( int argc, char *argv[] ){
 			msg_t* x_msg;
 			x_msg = malloc(sizeof(msg_t) + 11);
 			x_msg->mtype = 1;
+			x_msg->pid = getpid();
 			snprintf(x_msg->mtext, MAX_MSG_LEN,"%02lu%09lu", now.tv_sec, now.tv_nsec);
 
 			//initiallize receiver message

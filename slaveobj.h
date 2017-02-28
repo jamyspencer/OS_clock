@@ -28,16 +28,11 @@ struct list{
 
 typedef struct queue_msg{
 	long int mtype;
+	pid_t pid;
 	char mtext[1];
 } msg_t;
 
 struct timespec* shrMemMakeAttach(int* shmid);
 int lockMsgMakeAttach(void);
-
-
-
-#define SLV_INFO struct info
-#define SLV_LIST struct list
-
 
 #endif

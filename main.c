@@ -16,14 +16,15 @@
 void AbortProc();
 void AlarmHandler();
 
-static SLV_LIST* hd_ptr;
+static struct list *hd_ptr;
 static struct timespec *my_clock;
 static int shmid;
 static int lock_que_id;
+static char* file_name;
 
 int main ( int argc, char *argv[] ){
 
-	char* file_name = "test.out";
+	file_name = "test.out";
 	int c;
 
 	int num_children = 5;
@@ -33,11 +34,9 @@ int main ( int argc, char *argv[] ){
 
 	pid_t returning_child;
 
-
 	signal(2, AbortProc);
 	signal(SIGALRM, AlarmHandler);
 	hd_ptr = NULL;
-
 
 	while ( (c = getopt(argc, argv, "hi:l:s:t:")) != -1) {
 		switch(c){
@@ -71,8 +70,7 @@ int main ( int argc, char *argv[] ){
 	my_clock = shrMemMakeAttach(&shmid);
 	my_clock->tv_nsec = 0;
 	my_clock->tv_sec = 0;
-	
-	
+		
 	//set up lock queue with a message to allow the first user in
 	lock_que_id = lockMsgMakeAttach();
 	msg_t *my_lock;
@@ -82,7 +80,6 @@ int main ( int argc, char *argv[] ){
 	if ((msgsnd(lock_que_id, my_lock, sizeof(msg_t) + 4, 0)) == -1){
 		perror("msgsnd, initial message");
 	}
-
 
 	//set up msg_t to send acknowledgement to exiting users
 	msg_t* xt_user;
@@ -98,17 +95,14 @@ int main ( int argc, char *argv[] ){
 		AbortProc();
 	}
 
-
-
 	do{//spin-waiting for users to return while advancing clock
 
 		if ((returning_child = waitpid(-1, NULL, WNOHANG)) != 0){
 
 			if (returning_child != -1){
-				hd_ptr = destroyNode(hd_ptr, returning_child);
-				printf("Child %d returned/removed\n", returning_child);
+				hd_ptr = destroyNode(hd_ptr, returning_child, file_name);
+//				printf("Child %d returned/removed\n", returning_child);
 				child_count--;
-
 			}
 			
 			if (total_spawned < 100 && my_clock->tv_sec < 2){
@@ -119,18 +113,19 @@ int main ( int argc, char *argv[] ){
 				}
 			}
 		}
-		//
+		clock_tick(my_clock, 332000);
 		if((msgrcv(lock_que_id, unlock, sizeof(msg_t) + 11, 0, 0)) ==-1){
 			perror("msgrcv");
 		}
 //		printf("Message received: %s\n", unlock->mtext);
+
 		if(unlock->mtype == 1){
+			appendMsg(hd_ptr, my_clock, unlock->pid, unlock->mtext, file_name);
 			if ((msgsnd(lock_que_id, xt_user, sizeof(msg_t) + 1, 0)) == -1){
 				perror("msgsnd");
 			}
 		}
 		else{
-			clock_tick(my_clock, 329000);
 			if ((msgsnd(lock_que_id, my_lock, sizeof(msg_t) + 1, 0)) == -1){
 				perror("msgsnd, post-clock-tick");
 			}
@@ -149,7 +144,7 @@ int main ( int argc, char *argv[] ){
 
 void AlarmHandler(){
 	perror("Time ran out");
-	KillSlaves(hd_ptr);
+	KillSlaves(hd_ptr, file_name);
 	msgctl(lock_que_id, IPC_RMID, NULL);
 	shmdt(my_clock);
 	shmctl(shmid, IPC_RMID, NULL);
@@ -158,7 +153,7 @@ void AlarmHandler(){
 
 void AbortProc(){
 //	signal(2, AbortProc);
-	KillSlaves(hd_ptr);
+	KillSlaves(hd_ptr, file_name);
 	msgctl(lock_que_id, IPC_RMID, NULL);
 	shmdt(my_clock);
 	shmctl(shmid, IPC_RMID, NULL);

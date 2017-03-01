@@ -1,0 +1,10 @@
+Program spawns up to 100 "user" processes, s at a time. The users run for a randomly selected time, requests
+permission to terminate via a message queue(sending the time it requested). Once permission is given it 
+terminates and a log entry is made that includes the time it requested permission and the time it actually
+returned. If the program runs longer than t the main aborts, terminating all users and removing the message 
+queue and the system clock.
+
+-h	Sends help info to stdout
+-l	Set log file name(default is test.out)
+-s	Changes the number of slave processes(default is 5)
+-t	Changes the number of seconds to wait until the master terminates all slaves and itself.(default is 20)

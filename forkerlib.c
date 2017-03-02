@@ -71,9 +71,12 @@ struct list* findNodeByPid(struct list *head_ptr, pid_t pid){
 
 void appendMsg(struct list* head_ptr, struct timespec *clock, pid_t pid, char* done_time){
 	struct list *done = findNodeByPid(head_ptr, pid);
-
-	done->item.msg = MakeMsg(clock, done_time, pid);//malloc'd
-
+	if (done){
+		done->item.msg = MakeMsg(clock, done_time, pid);//malloc'd
+	}
+	else{
+		perror("Could not find pid");
+	}
 	return;
 }
 
@@ -94,7 +97,7 @@ int SaveLog(char* log_file_name, char* msg, pid_t pid) {
 	FILE* file_write = fopen(log_file_name, "a");
 
 	if (msg == NULL){
-		fprintf(file_write, "Process: %d shut down abnormally.");
+		fprintf(file_write, "Process: %d shut down abnormally.", pid);
 	}
 	else{
 		fprintf(file_write, "%s", msg);

@@ -88,11 +88,12 @@ int main ( int argc, char *argv[] ){
 			msg_t *shut_down;
 			shut_down = malloc (sizeof(msg_t) + lock_len);
 
+			shmdt(sys_clock);
 
-			if((msgsnd(lock_que, x_msg, sizeof(msg_t), IPC_NOWAIT)) == -1){
+			if((msgsnd(lock_que, x_msg, sizeof(msg_t), 0)) == -1){
 				perror("msgsnd: x_msg");
 			}
-			if((msgrcv(lock_que, shut_down, sizeof(msg_t) + 1, 2, 0)) == -1){
+			if((msgrcv(lock_que, shut_down, sizeof(msg_t) + 1, 9, 0)) == -1){
 				perror("msgrcv, returning");
 			}
 			free (x_msg);
@@ -100,7 +101,7 @@ int main ( int argc, char *argv[] ){
 		}
 //		fprintf(stderr, "Exiting: %d\n", getpid());
 
-		if ((msgsnd(lock_que, my_lock, sizeof(msg_t) + lock_len, IPC_NOWAIT)) == -1){
+		if ((msgsnd(lock_que, my_lock, sizeof(msg_t) + lock_len, 0)) == -1){
 			perror("msgsnd");
 		}
 		
@@ -109,6 +110,7 @@ int main ( int argc, char *argv[] ){
 
 	free (my_lock);
 	free (unlock);
+
 	return 0;
 }
 

@@ -12,7 +12,7 @@
 #include "forkerlib.h"
 #include "slaveobj.h"
 
-
+void PrintList(void);
 void AbortProc();
 void AlarmHandler();
 
@@ -42,7 +42,7 @@ int main ( int argc, char *argv[] ){
 		switch(c){
 		case 'h':
 			printf("-h\tHelp Menu\n");
-			printf("-l\tSet log file name(default is test.out)\n-s\tChanges the number of slave processes(default is 4)\n");
+			printf("-l\tSet log file name(default is test.out)\n-s\tChanges the number of slave processes(default is 5)\n");
 			printf("-t\tChanges the number of seconds to wait until the master terminates all slaves and itself(default is 20)\n");
 			return 0;
 			break;
@@ -82,7 +82,7 @@ int main ( int argc, char *argv[] ){
 	//set up msg_t to send acknowledgement to exiting users
 	msg_t* xt_user;
 	xt_user = malloc(sizeof(msg_t) + 1);
-	(*xt_user).mtype = 2;
+	(*xt_user).mtype = 9;
 	strncpy((*xt_user).mtext, "y", 2);
 	msg_t* unlock;
 	unlock = malloc(sizeof(msg_t) + 11);
@@ -113,8 +113,17 @@ int main ( int argc, char *argv[] ){
 				}
 			}
 		}
-		//
-		if((msgrcv(lock_que_id, unlock, sizeof(msg_t) + 11, 0, 0)) ==-1){
+/*	if (child_count < 2){
+		PrintList();
+	}
+     struct msqid_ds info;   
+    if (msgctl(lock_que_id, IPC_STAT, &info))
+            perror("msgctl IPC_STAT error ");
+
+    printf("Current # of messages on queue\t %d\n", info.msg_qnum);
+	printf("pid of last sender %d vs pid of oss %d\n", info.msg_lspid, getpid());
+*/
+		if((msgrcv(lock_que_id, unlock, sizeof(msg_t) + 11, -4, 0)) ==-1){
 			perror("msgrcv");
 		}
 //		printf("Message received: %s\n", unlock->mtext);
@@ -132,6 +141,7 @@ int main ( int argc, char *argv[] ){
 			}
 		}
 
+
 //	printf("Total Users: %d \t Active users: %d\n", total_spawned, child_count);	
 	}while(child_count > 0);
 
@@ -146,7 +156,10 @@ int main ( int argc, char *argv[] ){
 
 void AlarmHandler(){
 	perror("Time ran out");
-	KillSlaves(hd_ptr, file_name);
+	while (hd_ptr != NULL){	
+		kill(hd_ptr->item.process_id, SIGKILL);
+		destroyNode(hd_ptr, (hd_ptr->item).process_id, file_name);	
+	}
 	msgctl(lock_que_id, IPC_RMID, NULL);
 	shmdt(my_clock);
 	shmctl(shmid, IPC_RMID, NULL);
@@ -154,15 +167,21 @@ void AlarmHandler(){
 }
 
 void AbortProc(){
-//	signal(2, AbortProc);
-	KillSlaves(hd_ptr, file_name);
+	signal(2, AbortProc);
+	msgctl(lock_que_id, IPC_RMID, NULL);
+	while (hd_ptr != NULL){	
+		kill(hd_ptr->item.process_id, SIGKILL);
+		destroyNode(hd_ptr, (hd_ptr->item).process_id, file_name);	
+	}
 	msgctl(lock_que_id, IPC_RMID, NULL);
 	shmdt(my_clock);
 	shmctl(shmid, IPC_RMID, NULL);
+	kill(0, 2);
+	msgctl(lock_que_id, IPC_RMID, NULL);
 	exit(1);
 }
 
-PrintList(){
+void PrintList(void){
 	struct list * this = hd_ptr;
 	
 	while (this){
